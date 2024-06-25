@@ -1,0 +1,8 @@
+###
+POST http://127.0.0.1:8080/sensors/registration
+Content-Type: application/json
+
+{
+  "name": "Sensor"
+}
+###
