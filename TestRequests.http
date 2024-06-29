@@ -12,10 +12,10 @@ POST http://127.0.0.1:8080/measurements/add
 Content-Type: application/json
 
 {
-  "value": 120,
+  "value": 12,
   "raining": true,
   "sensorDTO": {
-    "name": "Sensor23"
+    "name": "Sensor"
   }
 }
 ###

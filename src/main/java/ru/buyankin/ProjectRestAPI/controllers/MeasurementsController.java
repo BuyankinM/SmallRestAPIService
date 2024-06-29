@@ -85,7 +85,6 @@ public class MeasurementsController {
         measurement.setSensor(sensor);
         measurement.setValue(measurementDTO.getValue());
         measurement.setRaining(measurementDTO.isRaining());
-        measurement.setCreatedAt(LocalDateTime.now());
 
         measurementsService.save(measurement);
 
