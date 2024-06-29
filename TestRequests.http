@@ -6,3 +6,20 @@ Content-Type: application/json
   "name": "Sensor"
 }
 ###
+
+###
+POST http://127.0.0.1:8080/measurements/add
+Content-Type: application/json
+
+{
+  "value": 120,
+  "raining": true,
+  "sensorDTO": {
+    "name": "Sensor23"
+  }
+}
+###
+
+###
+GET http://127.0.0.1:8080/measurements
+###

@@ -1,8 +1,6 @@
 package ru.buyankin.ProjectRestAPI.models;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 
 import java.time.LocalDateTime;
@@ -17,13 +15,9 @@ public class Measurement {
     private int id;
 
     @Column(name = "value")
-    @NotEmpty(message = "Temperature could not be empty")
-    @Min(value = -100, message = "Temperature year should be greater than -100")
-    @Max(value = 100, message = "Temperature year should be lower than 100")
-    private float temperature;
+    private float value;
 
     @Column(name = "raining")
-    @NotEmpty(message = "Raining property could not be empty")
     private boolean raining;
 
     @Column(name = "created_at")
@@ -31,14 +25,13 @@ public class Measurement {
 
     @ManyToOne
     @JoinColumn(name = "sensor_id", referencedColumnName = "id")
-    @NotEmpty(message = "Sensor could not be empty")
     private Sensor sensor;
 
     public Measurement() {
     }
 
-    public Measurement(float temperature, boolean raining, Sensor sensor) {
-        this.temperature = temperature;
+    public Measurement(float value, boolean raining, Sensor sensor) {
+        this.value = value;
         this.raining = raining;
         this.sensor = sensor;
     }
@@ -51,15 +44,14 @@ public class Measurement {
         return id;
     }
 
-    public float getTemperature() {
-        return temperature;
+    public float getValue() {
+        return value;
     }
 
-    public void setTemperature(float temperature) {
-        this.temperature = temperature;
+    public void setValue(float value) {
+        this.value = value;
     }
 
-    @NotEmpty(message = "Raining property could not be empty")
     public boolean isRaining() {
         return raining;
     }

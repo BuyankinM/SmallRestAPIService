@@ -16,7 +16,6 @@ import ru.buyankin.ProjectRestAPI.util.SensorErrorResponse;
 import ru.buyankin.ProjectRestAPI.util.SensorNotCreatedException;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/sensors")
