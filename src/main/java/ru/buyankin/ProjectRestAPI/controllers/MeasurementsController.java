@@ -43,6 +43,12 @@ public class MeasurementsController {
         this.modelMapper = modelMapper;
     }
 
+    @GetMapping("/rainyDaysCount")
+    public ResponseEntity<Long> getRainyDaysCount() {
+        long rainyDaysCount = measurementsService.countRainyDays();
+        return ResponseEntity.ok(rainyDaysCount);
+    }
+
     @GetMapping()
     public ResponseEntity<List<MeasurementDTO>> getAllMeasurements() {
         List<MeasurementDTO> measurementDTOs = measurementsService
