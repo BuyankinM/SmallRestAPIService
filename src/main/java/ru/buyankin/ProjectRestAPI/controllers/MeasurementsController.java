@@ -6,19 +6,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import ru.buyankin.ProjectRestAPI.dto.MeasurementDTO;
 import ru.buyankin.ProjectRestAPI.dto.SensorDTO;
 import ru.buyankin.ProjectRestAPI.models.Measurement;
-import ru.buyankin.ProjectRestAPI.models.Sensor;
 import ru.buyankin.ProjectRestAPI.services.MeasurementsService;
-import ru.buyankin.ProjectRestAPI.services.SensorsService;
-import ru.buyankin.ProjectRestAPI.util.MeasurementErrorResponse;
-import ru.buyankin.ProjectRestAPI.util.MeasurementNotCreatedException;
-import ru.buyankin.ProjectRestAPI.util.SensorValidator;
+import ru.buyankin.ProjectRestAPI.util.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,19 +21,15 @@ import java.util.stream.Collectors;
 public class MeasurementsController {
 
     private final MeasurementsService measurementsService;
-    private final SensorsService sensorsService;
-    private final SensorValidator sensorValidator;
+    private final MeasurementValidator measurementValidator;
     private final ModelMapper modelMapper;
 
     @Autowired
     public MeasurementsController(MeasurementsService measurementsService,
-                                  SensorsService sensorsService,
-                                  SensorValidator sensorValidator,
+                                  MeasurementValidator measurementValidator,
                                   ModelMapper modelMapper) {
-
         this.measurementsService = measurementsService;
-        this.sensorsService = sensorsService;
-        this.sensorValidator = sensorValidator;
+        this.measurementValidator = measurementValidator;
         this.modelMapper = modelMapper;
     }
 
@@ -70,40 +60,26 @@ public class MeasurementsController {
     public ResponseEntity<HttpStatus> addMeasurement(@RequestBody @Valid MeasurementDTO measurementDTO,
                                                      BindingResult bindingResult) {
 
-        SensorDTO sensorDTO = measurementDTO.getSensorDTO();
-        sensorValidator.validate(sensorDTO, bindingResult);
+        Measurement measurementToAdd = convertToMeasurement(measurementDTO);
+        measurementValidator.validate(measurementToAdd, bindingResult);
+        if (bindingResult.hasErrors())
+            ErrorsUtil.returnErrorsToClient(bindingResult);
 
-        if (bindingResult.hasErrors()) {
-            StringBuilder errorMsg = new StringBuilder();
-            List<FieldError> fieldErrors = bindingResult.getFieldErrors();
-            for (FieldError error : fieldErrors) {
-                errorMsg.append(error.getField())
-                        .append(" - ")
-                        .append(error.getDefaultMessage())
-                        .append("; ");
-            }
-            throw new MeasurementNotCreatedException(errorMsg.toString());
-        }
-
-        Sensor sensor = sensorsService.findByName(sensorDTO.getName()).orElse(null);
-
-        Measurement measurement = new Measurement();
-        measurement.setSensor(sensor);
-        measurement.setValue(measurementDTO.getValue());
-        measurement.setRaining(measurementDTO.isRaining());
-
-        measurementsService.save(measurement);
+        measurementsService.addMeasurement(measurementToAdd);
 
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
+    private Measurement convertToMeasurement(MeasurementDTO measurementDTO) {
+        return modelMapper.map(measurementDTO, Measurement.class);
+    }
+
     @ExceptionHandler
-    private ResponseEntity<MeasurementErrorResponse> handleException(MeasurementNotCreatedException e) {
+    private ResponseEntity<MeasurementErrorResponse> handleException(MeasurementException e) {
         MeasurementErrorResponse response = new MeasurementErrorResponse(
                 e.getMessage(),
                 System.currentTimeMillis()
         );
-
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 }

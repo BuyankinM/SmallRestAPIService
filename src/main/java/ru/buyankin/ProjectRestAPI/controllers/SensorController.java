@@ -6,16 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import ru.buyankin.ProjectRestAPI.dto.SensorDTO;
 import ru.buyankin.ProjectRestAPI.models.Sensor;
 import ru.buyankin.ProjectRestAPI.services.SensorsService;
-import ru.buyankin.ProjectRestAPI.util.SensorAlreadyExistsException;
-import ru.buyankin.ProjectRestAPI.util.SensorErrorResponse;
-import ru.buyankin.ProjectRestAPI.util.SensorNotCreatedException;
-
-import java.util.List;
+import ru.buyankin.ProjectRestAPI.util.ErrorsUtil;
+import ru.buyankin.ProjectRestAPI.util.MeasurementErrorResponse;
+import ru.buyankin.ProjectRestAPI.util.MeasurementException;
+import ru.buyankin.ProjectRestAPI.util.SensorValidator;
 
 @RestController
 @RequestMapping("/sensors")
@@ -23,53 +21,39 @@ public class SensorController {
 
     private final ModelMapper modelMapper;
     private final SensorsService sensorsService;
+    private final SensorValidator sensorValidator;
 
     @Autowired
-    public SensorController(ModelMapper modelMapper, SensorsService sensorsService) {
+    public SensorController(ModelMapper modelMapper, SensorsService sensorsService, SensorValidator sensorValidator) {
         this.modelMapper = modelMapper;
         this.sensorsService = sensorsService;
+        this.sensorValidator = sensorValidator;
     }
 
     @PostMapping("/registration")
     public ResponseEntity<HttpStatus> registerSensor(@RequestBody @Valid SensorDTO sensorDTO,
                                                      BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            StringBuilder errorMsg = new StringBuilder();
-            List<FieldError> fieldErrors = bindingResult.getFieldErrors();
-            for (FieldError error : fieldErrors) {
-                errorMsg.append(error.getField())
-                        .append(" - ")
-                        .append(error.getDefaultMessage())
-                        .append(";");
-            }
-            throw new SensorNotCreatedException(errorMsg.toString());
-        }
 
-        if (sensorsService.findByName(sensorDTO.getName()).isPresent())
-            throw new SensorAlreadyExistsException("This sensor already exist in base!");
+        Sensor sensorToAdd = convertToSensor(sensorDTO);
+        sensorValidator.validate(sensorToAdd, bindingResult);
 
-        sensorsService.save(modelMapper.map(sensorDTO, Sensor.class));
+        if (bindingResult.hasErrors())
+            ErrorsUtil.returnErrorsToClient(bindingResult);
 
+        sensorsService.save(sensorToAdd);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
     @ExceptionHandler
-    private ResponseEntity<SensorErrorResponse> handleException(SensorNotCreatedException e) {
-        SensorErrorResponse response = new SensorErrorResponse(
+    private ResponseEntity<MeasurementErrorResponse> handleException(MeasurementException e) {
+        MeasurementErrorResponse response = new MeasurementErrorResponse(
                 e.getMessage(),
                 System.currentTimeMillis()
         );
-
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler
-    private ResponseEntity<SensorErrorResponse> handleException(SensorAlreadyExistsException e) {
-        SensorErrorResponse response = new SensorErrorResponse(
-                e.getMessage(),
-                System.currentTimeMillis()
-        );
-
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    private Sensor convertToSensor(SensorDTO sensorDTO) {
+        return modelMapper.map(sensorDTO, Sensor.class);
     }
 }

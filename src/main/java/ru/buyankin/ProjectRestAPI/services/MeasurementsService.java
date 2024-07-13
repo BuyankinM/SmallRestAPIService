@@ -15,16 +15,12 @@ import java.util.Random;
 public class MeasurementsService {
 
     private final MeasurementsRepository measurementRepository;
+    private final SensorsService sensorsService;
 
     @Autowired
-    public MeasurementsService(MeasurementsRepository measurementRepository) {
+    public MeasurementsService(MeasurementsRepository measurementRepository, SensorsService sensorsService) {
         this.measurementRepository = measurementRepository;
-    }
-
-    @Transactional
-    public void save(Measurement measurement) {
-        addRandomDate(measurement);
-        measurementRepository.save(measurement);
+        this.sensorsService = sensorsService;
     }
 
     private static void addRandomDate(Measurement measurement) {
@@ -39,5 +35,15 @@ public class MeasurementsService {
 
     public long countRainyDays() {
         return measurementRepository.countURainyDays();
+    }
+
+    @Transactional
+    public void addMeasurement(Measurement measurement) {
+        addRandomDate(measurement);
+        enrichMeasurement(measurement);
+    }
+
+    private void enrichMeasurement(Measurement measurement) {
+        measurement.setSensor(sensorsService.findByName(measurement.getSensor().getName()).get());
     }
 }
